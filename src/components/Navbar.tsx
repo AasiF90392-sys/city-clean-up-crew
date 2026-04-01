@@ -47,6 +47,9 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Link to="/admin-login" className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            Admin
+          </Link>
           <Button asChild>
             <Link to="/complaint">
               <ClipboardList className="mr-2 h-4 w-4" />
