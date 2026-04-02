@@ -15,6 +15,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
+import AIChatBot from "./components/AIChatBot";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/store" element={<StorePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <AIChatBot />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

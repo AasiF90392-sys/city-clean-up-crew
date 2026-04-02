@@ -2,12 +2,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Menu, X } from "lucide-react";
 import { useState } from "react";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 const navLinks = [
   { label: "Home", to: "/" },
   { label: "Register Complaint", to: "/complaint" },
   { label: "Track Complaint", to: "/track" },
-  { label: "Dashboard", to: "/dashboard" },
   { label: "Awareness", to: "/awareness" },
   { label: "Store", to: "/store" },
   { label: "Contact", to: "/contact" },
@@ -48,6 +48,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
+          <DarkModeToggle />
           <Link to="/admin-login" className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground">
             Admin
           </Link>
@@ -60,9 +61,12 @@ const Navbar = () => {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <DarkModeToggle />
+          <button onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -82,6 +86,13 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
+          <Link
+            to="/admin-login"
+            onClick={() => setMobileOpen(false)}
+            className="block rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground"
+          >
+            Admin
+          </Link>
           <Button asChild className="mt-2 w-full">
             <Link to="/complaint" onClick={() => setMobileOpen(false)}>
               Register Complaint
