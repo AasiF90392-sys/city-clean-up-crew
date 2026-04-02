@@ -13,6 +13,7 @@ import AwarenessPage from "./pages/AwarenessPage";
 import ContactPage from "./pages/ContactPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/store" element={<StorePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

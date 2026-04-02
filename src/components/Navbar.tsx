@@ -9,6 +9,7 @@ const navLinks = [
   { label: "Track Complaint", to: "/track" },
   { label: "Dashboard", to: "/dashboard" },
   { label: "Awareness", to: "/awareness" },
+  { label: "Store", to: "/store" },
   { label: "Contact", to: "/contact" },
 ];
 
