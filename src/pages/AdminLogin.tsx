@@ -34,20 +34,45 @@ const AdminLogin = () => {
     setLoading(true);
 
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
+      // Sign up flow
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) {
+        setLoading(false);
+        toast.error("Signup failed: " + signUpError.message);
+        return;
+      }
+      // Auto login after signup
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) {
-        toast.error("Signup failed: " + error.message);
+      if (loginError) {
+        toast.error("Account created but login failed. Try logging in.");
+        setIsSignUp(false);
       } else {
-        toast.success("Account created! Logging you in...");
+        toast.success("Account created & logged in!");
         navigate("/admin", { replace: true });
       }
     } else {
+      // Login flow - try login first, if fails try signup + login
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      setLoading(false);
       if (error) {
-        toast.error("Login failed: " + error.message);
+        // Account might not exist, try creating it
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          setLoading(false);
+          toast.error("Login failed: " + error.message);
+          return;
+        }
+        // Now try login again
+        const { error: retryError } = await supabase.auth.signInWithPassword({ email, password });
+        setLoading(false);
+        if (retryError) {
+          toast.error("Login failed: " + retryError.message);
+        } else {
+          toast.success("Login successful!");
+          navigate("/admin", { replace: true });
+        }
       } else {
+        setLoading(false);
         toast.success("Login successful!");
         navigate("/admin", { replace: true });
       }
