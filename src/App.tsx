@@ -13,6 +13,7 @@ import AwarenessPage from "./pages/AwarenessPage";
 import ContactPage from "./pages/ContactPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
