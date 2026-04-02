@@ -34,51 +34,25 @@ const AdminLogin = () => {
     setLoading(true);
 
     if (isSignUp) {
-      // Sign up flow
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        setLoading(false);
-        toast.error("Signup failed: " + signUpError.message);
+      const { error } = await supabase.auth.signUp({ email, password });
+      setLoading(false);
+      if (error) {
+        toast.error("Signup failed: " + error.message);
         return;
       }
-      // Auto login after signup
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      setLoading(false);
-      if (loginError) {
-        toast.error("Account created but login failed. Try logging in.");
-        setIsSignUp(false);
-      } else {
-        toast.success("Account created & logged in!");
-        navigate("/admin", { replace: true });
-      }
+      toast.success("Account created! Now login with your credentials.");
+      setIsSignUp(false);
     } else {
-      // Login flow - try login first, if fails try signup + login
       const { error } = await supabase.auth.signInWithPassword({ email, password });
+      setLoading(false);
       if (error) {
-        // Account might not exist, try creating it
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
-        if (signUpError) {
-          setLoading(false);
-          toast.error("Login failed: " + error.message);
-          return;
-        }
-        // Now try login again
-        const { error: retryError } = await supabase.auth.signInWithPassword({ email, password });
-        setLoading(false);
-        if (retryError) {
-          toast.error("Login failed: " + retryError.message);
-        } else {
-          toast.success("Login successful!");
-          navigate("/admin", { replace: true });
-        }
+        toast.error("Login failed: " + error.message);
       } else {
-        setLoading(false);
         toast.success("Login successful!");
         navigate("/admin", { replace: true });
       }
     }
   };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg">
