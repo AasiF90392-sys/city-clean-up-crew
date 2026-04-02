@@ -6,15 +6,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
+  const { user } = useAuth();
 
-  // If already logged in, redirect
   if (user) {
     navigate("/admin", { replace: true });
     return null;
@@ -26,14 +27,30 @@ const AdminLogin = () => {
       toast.error("Please enter email and password");
       return;
     }
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
     setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      toast.error("Login failed: " + error.message);
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      setLoading(false);
+      if (error) {
+        toast.error("Signup failed: " + error.message);
+      } else {
+        toast.success("Account created! Logging you in...");
+        navigate("/admin", { replace: true });
+      }
     } else {
-      toast.success("Login successful!");
-      navigate("/admin", { replace: true });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      setLoading(false);
+      if (error) {
+        toast.error("Login failed: " + error.message);
+      } else {
+        toast.success("Login successful!");
+        navigate("/admin", { replace: true });
+      }
     }
   };
 
@@ -44,23 +61,38 @@ const AdminLogin = () => {
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary">
             <ShieldCheck className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="mt-4 font-heading text-xl font-bold">Admin Login</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Enter your credentials to access the admin panel</p>
+          <h1 className="mt-4 font-heading text-xl font-bold">
+            {isSignUp ? "Admin Sign Up" : "Admin Login"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isSignUp ? "Create your admin account" : "Enter your credentials to access the admin panel"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@smartsafai.gov.in" />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" />
           </div>
           <div>
             <Label>Password</Label>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? (isSignUp ? "Creating account..." : "Logging in...") : (isSignUp ? "Sign Up" : "Login")}
           </Button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+          <button
+            type="button"
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="font-medium text-primary hover:underline"
+          >
+            {isSignUp ? "Login" : "Sign Up"}
+          </button>
+        </p>
       </div>
     </div>
   );
