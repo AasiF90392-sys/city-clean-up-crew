@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain } from "lucide-react";
+import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -77,7 +77,7 @@ function improveComplaint(text: string): string {
   return improved.replace(/\.$/, "") + suffix;
 }
 
-function getAISolution(cat: string, desc: string): string {
+function getAISolution(cat: string): string {
   const solutions: Record<string, string> = {
     "Kachra Uthane ki Complaint": "📌 Aapki complaint ka possible solution: Nagar Nigam cleaning team ko notify kiya jayega. Usually 24 ghante mein kachra uthaya jata hai.",
     "Nali Block Complaint": "📌 Nali block ki complaint drainage department ko bheji jayegi. Technician 48 ghante mein visit karenge.",
@@ -90,7 +90,7 @@ function getAISolution(cat: string, desc: string): string {
   return solutions[cat] || solutions["Other"];
 }
 
-function getEstimatedTime(cat: string, priority: string): string {
+function getEstimatedTime(priority: string): string {
   if (priority === "high") return "12-24 hours (Urgent)";
   if (priority === "medium") return "24-48 hours";
   return "48-72 hours";
@@ -113,7 +113,13 @@ const ComplaintPage = () => {
   const [aiDepartment, setAiDepartment] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
 
-  // AI auto-detect on description change
+  // Location state
+  const [location, setLocation] = useState("");
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Photo state
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([]);
+
   useEffect(() => {
     if (description.length > 5) {
       const detected = detectCategory(description);
@@ -123,14 +129,64 @@ const ComplaintPage = () => {
       const cat = detected || category;
       if (cat) {
         setAiDepartment(getDepartment(cat));
-        setAiSuggestion(getAISolution(cat, description));
-        setEstimatedTime(getEstimatedTime(cat, pri));
+        setAiSuggestion(getAISolution(cat));
+        setEstimatedTime(getEstimatedTime(pri));
       }
     } else {
       setAiSuggestion("");
       setAiDepartment("");
     }
   }, [description, category, isUrgent]);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Aapka browser location support nahi karta");
+      return;
+    }
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "hi,en" } }
+          );
+          const data = await res.json();
+          setLocation(data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          toast.success("📍 Location detect ho gayi!");
+        } catch {
+          setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          toast.success("📍 GPS coordinates mil gaye!");
+        }
+        setLocationLoading(false);
+      },
+      (err) => {
+        setLocationLoading(false);
+        if (err.code === 1) toast.error("Location permission denied. Browser settings mein allow karein.");
+        else toast.error("Location detect nahi ho payi. Dobara try karein.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newPhotos = Array.from(files).slice(0, 3 - photos.length).map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setPhotos((prev) => [...prev, ...newPhotos].slice(0, 3));
+    toast.success(`${newPhotos.length} photo(s) upload ho gayi!`);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
 
   const handleImprove = () => {
     if (description.length < 5) {
@@ -151,7 +207,7 @@ const ComplaintPage = () => {
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
-    setAiSuggestion(""); setAiDepartment("");
+    setAiSuggestion(""); setAiDepartment(""); setLocation(""); setPhotos([]);
   };
 
   return (
@@ -219,21 +275,67 @@ const ComplaintPage = () => {
             </label>
           </div>
 
+          {/* GPS Location */}
           <div>
-            <Label>📍 Location (GPS Click karein)</Label>
-            <Button type="button" variant="outline" className="mt-1 w-full justify-start text-muted-foreground">
-              <MapPin className="mr-2 h-4 w-4" /> Click karein - Pura Pata Aayega
+            <Label>📍 Location</Label>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-1 w-full justify-start text-muted-foreground"
+              onClick={handleGetLocation}
+              disabled={locationLoading}
+            >
+              {locationLoading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Location detect ho rahi hai...</>
+              ) : (
+                <><MapPin className="mr-2 h-4 w-4" /> {location ? "📍 Location change karein" : "Click karein - Location detect hogi"}</>
+              )}
             </Button>
+            {location && (
+              <div className="mt-2 rounded-lg bg-accent p-3 text-sm text-accent-foreground">
+                <span className="font-semibold">📍 Detected Location:</span>
+                <p className="mt-1 text-xs break-all">{location}</p>
+              </div>
+            )}
           </div>
+
+          {/* Photo Upload */}
           <div>
-            <Label>Attach Photo</Label>
-            <div className="mt-1 flex h-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground hover:border-primary">
+            <Label>Attach Photo (max 3)</Label>
+            <label
+              htmlFor="photo-upload"
+              className="mt-1 flex h-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground hover:border-primary hover:bg-accent/50 transition-colors"
+            >
               <Camera className="mr-2 h-5 w-5" /> Photo khichein ya upload karein
-            </div>
+            </label>
+            <input
+              id="photo-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+            {photos.length > 0 && (
+              <div className="mt-3 flex gap-3 flex-wrap">
+                {photos.map((p, i) => (
+                  <div key={i} className="relative group">
+                    <img src={p.preview} alt={`Upload ${i + 1}`} className="h-20 w-20 rounded-lg object-cover border" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
           <Button type="submit" className="w-full" size="lg">Submit Complaint</Button>
 
-          {/* Notes below form */}
           <div className="space-y-1 text-xs text-muted-foreground border-t pt-4">
             <p>⚠️ <strong>Note:</strong> Fake complaint submit karne par action liya ja sakta hai.</p>
             <p>📌 Complaint submit karne ke baad aapko tracking ID milegi.</p>
