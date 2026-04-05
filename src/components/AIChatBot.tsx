@@ -63,8 +63,7 @@ const AIChatBot = () => {
           <div key={i} className={`text-sm rounded-lg px-3 py-2 max-w-[85%] ${m.role === "bot" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground ml-auto"}`}>
             {m.text}
           </div>
-        ))}
-      </div>
+          <div ref={messagesEndRef} />
 
       <div className="border-t p-2 space-y-2">
         <div className="flex flex-wrap gap-1">
