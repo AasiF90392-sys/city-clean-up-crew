@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,11 @@ const AIChatBot = () => {
     { role: "bot", text: "Namaste! 🙏 Main aapki madad kar sakta hoon. Neeche koi option choose karein ya apna sawal likhein." },
   ]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleQuick = (q: string, a: string) => {
     setMessages((prev) => [...prev, { role: "user", text: q }, { role: "bot", text: a }]);
@@ -59,8 +64,8 @@ const AIChatBot = () => {
             {m.text}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
-
       <div className="border-t p-2 space-y-2">
         <div className="flex flex-wrap gap-1">
           {quickReplies.map((r) => (
