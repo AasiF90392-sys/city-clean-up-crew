@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,24 @@ const AIChatBot = () => {
     { role: "bot", text: "Namaste! 🙏 Main aapki madad kar sakta hoon. Neeche koi option choose karein ya apna sawal likhein." },
   ]);
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const container = messagesContainerRef.current;
+
+    if (!container || !open) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, open]);
 
   const handleQuick = (q: string, a: string) => {
     setMessages((prev) => [...prev, { role: "user", text: q }, { role: "bot", text: a }]);
@@ -30,12 +43,12 @@ const AIChatBot = () => {
     if (!input.trim()) return;
     const userMsg = input.trim();
     setInput("");
-    
+
     const match = quickReplies.find((r) => userMsg.toLowerCase().includes(r.q.toLowerCase().split(" ")[0]));
     const botReply = match
       ? match.a
       : "Aapka sawal samajh gaya! Kripya helpline 1800-XXX-XXXX par call karein ya complaint register karein. Hum jaldi madad karenge. 🙏";
-    
+
     setMessages((prev) => [...prev, { role: "user", text: userMsg }, { role: "bot", text: botReply }]);
   };
 
@@ -58,14 +71,18 @@ const AIChatBot = () => {
         <button onClick={() => setOpen(false)}><X className="h-5 w-5" /></button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: "350px" }}>
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-3 space-y-2"
+        style={{ maxHeight: "350px" }}
+      >
         {messages.map((m, i) => (
           <div key={i} className={`text-sm rounded-lg px-3 py-2 max-w-[85%] ${m.role === "bot" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground ml-auto"}`}>
             {m.text}
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
+
       <div className="border-t p-2 space-y-2">
         <div className="flex flex-wrap gap-1">
           {quickReplies.map((r) => (
