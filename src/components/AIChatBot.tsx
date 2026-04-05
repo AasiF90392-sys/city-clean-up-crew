@@ -20,19 +20,13 @@ const AIChatBot = () => {
 
   useEffect(() => {
     const container = messagesContainerRef.current;
+    if (!container || !open) return;
 
-    if (!container || !open) {
-      return;
-    }
+    const timer = setTimeout(() => {
+      container.scrollTop = container.scrollHeight;
+    }, 50);
 
-    const frame = window.requestAnimationFrame(() => {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
+    return () => clearTimeout(timer);
   }, [messages, open]);
 
   const handleQuick = (q: string, a: string) => {
