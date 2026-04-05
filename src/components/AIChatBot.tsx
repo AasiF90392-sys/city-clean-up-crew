@@ -16,6 +16,11 @@ const AIChatBot = () => {
     { role: "bot", text: "Namaste! 🙏 Main aapki madad kar sakta hoon. Neeche koi option choose karein ya apna sawal likhein." },
   ]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleQuick = (q: string, a: string) => {
     setMessages((prev) => [...prev, { role: "user", text: q }, { role: "bot", text: a }]);
