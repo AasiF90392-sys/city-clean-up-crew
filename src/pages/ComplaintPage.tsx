@@ -359,7 +359,9 @@ const ComplaintPage = () => {
             )}
           </div>
 
-          <Button type="submit" className="w-full" size="lg">Submit Complaint</Button>
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Complaint"}
+          </Button>
 
           <div className="space-y-1 text-xs text-muted-foreground border-t pt-4">
             <p>⚠️ <strong>Note:</strong> Fake complaint submit karne par action liya ja sakta hai.</p>
