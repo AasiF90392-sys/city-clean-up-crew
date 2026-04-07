@@ -232,6 +232,11 @@ const ComplaintPage = () => {
       return;
     }
     
+    // Save AI info for success dialog
+    setSuccessAiSolution(aiSuggestion);
+    setSuccessDepartment(aiDepartment);
+    setSuccessPriority(priorityLabels[aiPriority]);
+    
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
