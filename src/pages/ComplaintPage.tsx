@@ -10,6 +10,7 @@ import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2,
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -197,13 +198,37 @@ const ComplaintPage = () => {
     toast.success("AI ne aapki complaint improve kar di!");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !category || !description) {
       toast.error("Please fill all required fields");
       return;
     }
+    setSubmitting(true);
     const id = `CC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    const { error } = await supabase.from("complaints").insert({
+      tracking_id: id,
+      name,
+      phone,
+      email: (document.querySelector('input[type="email"]') as HTMLInputElement)?.value || null,
+      category,
+      description,
+      location: location || null,
+      priority: aiPriority,
+      is_urgent: isUrgent,
+      department: aiDepartment || null,
+      status: "Pending",
+    });
+    
+    setSubmitting(false);
+    if (error) {
+      toast.error("Complaint submit nahi ho payi. Dobara try karein.");
+      return;
+    }
+    
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
@@ -334,7 +359,9 @@ const ComplaintPage = () => {
             )}
           </div>
 
-          <Button type="submit" className="w-full" size="lg">Submit Complaint</Button>
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Complaint"}
+          </Button>
 
           <div className="space-y-1 text-xs text-muted-foreground border-t pt-4">
             <p>⚠️ <strong>Note:</strong> Fake complaint submit karne par action liya ja sakta hai.</p>

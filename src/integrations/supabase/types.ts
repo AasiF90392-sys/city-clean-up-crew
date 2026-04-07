@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      complaints: {
+        Row: {
+          category: string
+          created_at: string
+          department: string | null
+          description: string
+          email: string | null
+          id: string
+          is_urgent: boolean
+          location: string | null
+          name: string
+          phone: string
+          priority: string
+          status: string
+          tracking_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          department?: string | null
+          description: string
+          email?: string | null
+          id?: string
+          is_urgent?: boolean
+          location?: string | null
+          name: string
+          phone: string
+          priority?: string
+          status?: string
+          tracking_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          department?: string | null
+          description?: string
+          email?: string | null
+          id?: string
+          is_urgent?: boolean
+          location?: string | null
+          name?: string
+          phone?: string
+          priority?: string
+          status?: string
+          tracking_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          sent_by: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          sent_by?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          sent_by?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      ward_officers: {
+        Row: {
+          created_at: string
+          designation: string
+          email: string | null
+          id: string
+          name: string
+          phone: string
+          status: string
+          updated_at: string
+          ward_name: string
+        }
+        Insert: {
+          created_at?: string
+          designation?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone: string
+          status?: string
+          updated_at?: string
+          ward_name: string
+        }
+        Update: {
+          created_at?: string
+          designation?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+          ward_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
