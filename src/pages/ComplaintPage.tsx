@@ -113,6 +113,9 @@ const ComplaintPage = () => {
   const [aiPriority, setAiPriority] = useState<"high" | "medium" | "low">("low");
   const [aiDepartment, setAiDepartment] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
+  const [successAiSolution, setSuccessAiSolution] = useState("");
+  const [successDepartment, setSuccessDepartment] = useState("");
+  const [successPriority, setSuccessPriority] = useState("");
 
   // Location state
   const [location, setLocation] = useState("");
