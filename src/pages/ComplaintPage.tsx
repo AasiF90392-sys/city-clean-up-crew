@@ -386,10 +386,23 @@ const ComplaintPage = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="text-5xl">✅</div>
-            <p className="font-semibold text-lg">Complaint registered successfully</p>
+            <p className="font-semibold text-lg">Complaint registered successfully!</p>
+            
+            {/* AI Solution - shown first */}
+            {successAiSolution && (
+              <div className="rounded-lg border-2 border-primary/30 bg-accent p-4 text-left space-y-2">
+                <p className="font-heading font-bold text-sm flex items-center gap-2">🤖 AI Solution</p>
+                <p className="text-sm">{successAiSolution}</p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {successPriority && <span className="bg-background rounded-full px-2 py-0.5">{successPriority}</span>}
+                  {successDepartment && <span className="bg-background rounded-full px-2 py-0.5">🏢 {successDepartment}</span>}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-lg bg-accent p-4 space-y-2">
               <p className="font-heading font-bold text-xl text-primary">📌 Tracking ID: #{trackingId}</p>
-              <p className="text-sm text-muted-foreground">📩 Update aapko SMS/Email par milega</p>
+              <p className="text-sm text-muted-foreground">📩 Adhikari ko email notification bhej di gayi hai</p>
               <p className="text-sm text-muted-foreground">⏳ Estimated solve time: {estimatedTime || "24-48 hours"}</p>
             </div>
             <Button onClick={() => setShowSuccess(false)} className="w-full">OK, Done</Button>
