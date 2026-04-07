@@ -10,6 +10,7 @@ import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2,
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
