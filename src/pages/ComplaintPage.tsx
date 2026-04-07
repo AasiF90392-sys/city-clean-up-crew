@@ -198,13 +198,37 @@ const ComplaintPage = () => {
     toast.success("AI ne aapki complaint improve kar di!");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !category || !description) {
       toast.error("Please fill all required fields");
       return;
     }
+    setSubmitting(true);
     const id = `CC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    const { error } = await supabase.from("complaints").insert({
+      tracking_id: id,
+      name,
+      phone,
+      email: (document.querySelector('input[type="email"]') as HTMLInputElement)?.value || null,
+      category,
+      description,
+      location: location || null,
+      priority: aiPriority,
+      is_urgent: isUrgent,
+      department: aiDepartment || null,
+      status: "Pending",
+    });
+    
+    setSubmitting(false);
+    if (error) {
+      toast.error("Complaint submit nahi ho payi. Dobara try karein.");
+      return;
+    }
+    
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
