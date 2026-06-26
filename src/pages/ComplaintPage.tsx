@@ -211,7 +211,18 @@ const ComplaintPage = () => {
     }
     setSubmitting(true);
     const id = `CC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    
+
+    // Upload photos to storage
+    const uploadedPaths: string[] = [];
+    for (const p of photos) {
+      const ext = p.file.name.split(".").pop() || "jpg";
+      const path = `${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("complaint-photos")
+        .upload(path, p.file, { contentType: p.file.type });
+      if (!upErr) uploadedPaths.push(path);
+    }
+
     const { error } = await supabase.from("complaints").insert({
       tracking_id: id,
       name,
@@ -224,6 +235,7 @@ const ComplaintPage = () => {
       is_urgent: isUrgent,
       department: aiDepartment || null,
       status: "Pending",
+      image_urls: uploadedPaths,
     });
     
     setSubmitting(false);
