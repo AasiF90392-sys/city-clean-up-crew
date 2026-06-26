@@ -22,6 +22,7 @@ export type Database = {
           description: string
           email: string | null
           id: string
+          image_urls: string[] | null
           is_urgent: boolean
           location: string | null
           name: string
@@ -38,6 +39,7 @@ export type Database = {
           description: string
           email?: string | null
           id?: string
+          image_urls?: string[] | null
           is_urgent?: boolean
           location?: string | null
           name: string
@@ -54,6 +56,7 @@ export type Database = {
           description?: string
           email?: string | null
           id?: string
+          image_urls?: string[] | null
           is_urgent?: boolean
           location?: string | null
           name?: string
