@@ -92,6 +92,13 @@ const AdminLogin = () => {
             {isSignUp ? "Login" : "Sign Up"}
           </button>
         </p>
+        {!isSignUp && (
+          <p className="mt-2 text-center text-sm">
+            <a href="/forgot-password" className="font-medium text-primary hover:underline">
+              Forgot password?
+            </a>
+          </p>
+        )}
       </div>
     </div>
   );
