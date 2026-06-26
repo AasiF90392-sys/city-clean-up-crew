@@ -13,6 +13,8 @@ import AwarenessPage from "./pages/AwarenessPage";
 import ContactPage from "./pages/ContactPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 import AIChatBot from "./components/AIChatBot";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/awareness" element={<AwarenessPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/store" element={<StorePage />} />
             <Route path="*" element={<NotFound />} />
