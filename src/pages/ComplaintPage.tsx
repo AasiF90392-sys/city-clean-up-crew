@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2, X, CheckCircle2, Clock, RefreshCw, Copy } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -99,6 +99,19 @@ function getEstimatedTime(priority: string): string {
 
 const priorityLabels = { high: "🔴 High Priority", medium: "🟡 Medium Priority", low: "🟢 Low Priority" };
 
+const LOCK_KEY = "active_complaint_tracking_id";
+const LOCK_AT_KEY = "active_complaint_submitted_at";
+const LOCK_AI_KEY = "active_complaint_ai_solution";
+
+type ActiveComplaint = {
+  tracking_id: string;
+  status: string;
+  category: string;
+  location: string | null;
+  created_at: string;
+  priority: string;
+};
+
 const ComplaintPage = () => {
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get("type") || "";
@@ -116,6 +129,53 @@ const ComplaintPage = () => {
   const [successAiSolution, setSuccessAiSolution] = useState("");
   const [successDepartment, setSuccessDepartment] = useState("");
   const [successPriority, setSuccessPriority] = useState("");
+
+  // Device-level lock state
+  const [activeComplaint, setActiveComplaint] = useState<ActiveComplaint | null>(null);
+  const [lockChecking, setLockChecking] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchActiveComplaint = useCallback(async (silent = false) => {
+    const id = localStorage.getItem(LOCK_KEY);
+    if (!id) {
+      setActiveComplaint(null);
+      setLockChecking(false);
+      return;
+    }
+    if (!silent) setRefreshing(true);
+    const { data, error } = await supabase
+      .from("complaints")
+      .select("tracking_id,status,category,location,created_at,priority")
+      .eq("tracking_id", id)
+      .maybeSingle();
+    setRefreshing(false);
+    setLockChecking(false);
+    if (error || !data) {
+      // Not found in DB — clear stale lock
+      localStorage.removeItem(LOCK_KEY);
+      localStorage.removeItem(LOCK_AT_KEY);
+      localStorage.removeItem(LOCK_AI_KEY);
+      setActiveComplaint(null);
+      return;
+    }
+    const done = ["resolved", "closed"].includes((data.status || "").toLowerCase());
+    if (done) {
+      localStorage.removeItem(LOCK_KEY);
+      localStorage.removeItem(LOCK_AT_KEY);
+      localStorage.removeItem(LOCK_AI_KEY);
+      setActiveComplaint(null);
+      if (!silent) toast.success("Aapki pichli complaint resolve ho gayi hai! Ab nayi complaint kar sakte hain.");
+      return;
+    }
+    setActiveComplaint(data as ActiveComplaint);
+  }, []);
+
+  useEffect(() => {
+    fetchActiveComplaint(true);
+    const t = setInterval(() => fetchActiveComplaint(true), 30000);
+    return () => clearInterval(t);
+  }, [fetchActiveComplaint]);
+
 
   // Location state
   const [location, setLocation] = useState("");
@@ -248,17 +308,171 @@ const ComplaintPage = () => {
     setSuccessAiSolution(aiSuggestion);
     setSuccessDepartment(aiDepartment);
     setSuccessPriority(priorityLabels[aiPriority]);
-    
+
+    // Device-level lock: prevent re-submission until resolved
+    localStorage.setItem(LOCK_KEY, id);
+    localStorage.setItem(LOCK_AT_KEY, new Date().toISOString());
+    if (aiSuggestion) localStorage.setItem(LOCK_AI_KEY, aiSuggestion);
+
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
     setAiSuggestion(""); setAiDepartment(""); setLocation(""); setPhotos([]);
+    fetchActiveComplaint(true);
   };
+
+
+  // ----- Locked Status View -----
+  if (lockChecking) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container max-w-2xl py-20 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (activeComplaint) {
+    const status = activeComplaint.status || "Pending";
+    const statusLower = status.toLowerCase();
+    const stepIdx = statusLower.includes("progress") ? 1 : statusLower.includes("resolved") || statusLower.includes("closed") ? 2 : 0;
+    const steps = ["Submitted", "In Progress", "Resolved"];
+    const savedAi = localStorage.getItem(LOCK_AI_KEY) || "";
+    const statusColor =
+      stepIdx === 2 ? "bg-success/15 text-success border-success/30"
+      : stepIdx === 1 ? "bg-info/15 text-info border-info/30"
+      : "bg-warning/15 text-warning border-warning/30";
+
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container max-w-2xl py-8 sm:py-12 px-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+              <ClipboardList className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold">Your Active Complaint</h1>
+          </div>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Aapki pichli complaint abhi pending hai. Resolve hone ke baad nayi complaint kar sakte hain.
+          </p>
+
+          <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-sm space-y-5">
+            {/* Tracking ID */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Tracking ID</p>
+                <p className="font-heading text-lg font-bold text-primary">#{activeComplaint.tracking_id}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(activeComplaint.tracking_id);
+                  toast.success("Tracking ID copied!");
+                }}
+              >
+                <Copy className="mr-2 h-3.5 w-3.5" /> Copy
+              </Button>
+            </div>
+
+            {/* Status badge */}
+            <div className={`rounded-lg border px-4 py-3 ${statusColor}`}>
+              <p className="text-xs opacity-80">Current Status</p>
+              <p className="font-heading text-lg font-bold">{status}</p>
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-3">Progress</p>
+              <div className="flex items-center justify-between gap-2">
+                {steps.map((s, i) => (
+                  <div key={s} className="flex-1 flex flex-col items-center text-center">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                        i <= stepIdx
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {i < stepIdx ? <CheckCircle2 className="h-4 w-4" /> : i === stepIdx ? <Clock className="h-4 w-4" /> : i + 1}
+                    </div>
+                    <p className={`mt-2 text-[10px] sm:text-xs ${i <= stepIdx ? "font-semibold" : "text-muted-foreground"}`}>{s}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg bg-accent/50 p-3">
+                <p className="text-xs text-muted-foreground">Category</p>
+                <p className="font-medium">{activeComplaint.category}</p>
+              </div>
+              <div className="rounded-lg bg-accent/50 p-3">
+                <p className="text-xs text-muted-foreground">Submitted</p>
+                <p className="font-medium">{new Date(activeComplaint.created_at).toLocaleString()}</p>
+              </div>
+              {activeComplaint.location && (
+                <div className="rounded-lg bg-accent/50 p-3 sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">📍 Location</p>
+                  <p className="font-medium text-xs break-words">{activeComplaint.location}</p>
+                </div>
+              )}
+            </div>
+
+            {/* AI Solution */}
+            {savedAi && (
+              <div className="rounded-lg border-2 border-primary/30 bg-accent p-4 space-y-1">
+                <p className="font-heading font-bold text-sm flex items-center gap-2">🤖 AI Solution</p>
+                <p className="text-sm">{savedAi}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button
+                onClick={() => fetchActiveComplaint(false)}
+                disabled={refreshing}
+                className="flex-1"
+              >
+                {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh Status
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link to={`/track?id=${activeComplaint.tracking_id}`}>Full Details</Link>
+              </Button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!confirm("Kya aap is lock ko hatana chahte hain? Aapki complaint database mein safe rahegi.")) return;
+                localStorage.removeItem(LOCK_KEY);
+                localStorage.removeItem(LOCK_AT_KEY);
+                localStorage.removeItem(LOCK_AI_KEY);
+                setActiveComplaint(null);
+                toast.success("Lock hata diya. Ab nayi complaint kar sakte hain.");
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive underline w-full text-center"
+            >
+              Clear lock & file another complaint
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="container max-w-2xl py-12">
+
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <ClipboardList className="h-5 w-5 text-primary-foreground" />
