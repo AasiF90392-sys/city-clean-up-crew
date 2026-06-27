@@ -99,6 +99,19 @@ function getEstimatedTime(priority: string): string {
 
 const priorityLabels = { high: "🔴 High Priority", medium: "🟡 Medium Priority", low: "🟢 Low Priority" };
 
+const LOCK_KEY = "active_complaint_tracking_id";
+const LOCK_AT_KEY = "active_complaint_submitted_at";
+const LOCK_AI_KEY = "active_complaint_ai_solution";
+
+type ActiveComplaint = {
+  tracking_id: string;
+  status: string;
+  category: string;
+  location: string | null;
+  created_at: string;
+  priority: string;
+};
+
 const ComplaintPage = () => {
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get("type") || "";
@@ -116,6 +129,53 @@ const ComplaintPage = () => {
   const [successAiSolution, setSuccessAiSolution] = useState("");
   const [successDepartment, setSuccessDepartment] = useState("");
   const [successPriority, setSuccessPriority] = useState("");
+
+  // Device-level lock state
+  const [activeComplaint, setActiveComplaint] = useState<ActiveComplaint | null>(null);
+  const [lockChecking, setLockChecking] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchActiveComplaint = useCallback(async (silent = false) => {
+    const id = localStorage.getItem(LOCK_KEY);
+    if (!id) {
+      setActiveComplaint(null);
+      setLockChecking(false);
+      return;
+    }
+    if (!silent) setRefreshing(true);
+    const { data, error } = await supabase
+      .from("complaints")
+      .select("tracking_id,status,category,location,created_at,priority")
+      .eq("tracking_id", id)
+      .maybeSingle();
+    setRefreshing(false);
+    setLockChecking(false);
+    if (error || !data) {
+      // Not found in DB — clear stale lock
+      localStorage.removeItem(LOCK_KEY);
+      localStorage.removeItem(LOCK_AT_KEY);
+      localStorage.removeItem(LOCK_AI_KEY);
+      setActiveComplaint(null);
+      return;
+    }
+    const done = ["resolved", "closed"].includes((data.status || "").toLowerCase());
+    if (done) {
+      localStorage.removeItem(LOCK_KEY);
+      localStorage.removeItem(LOCK_AT_KEY);
+      localStorage.removeItem(LOCK_AI_KEY);
+      setActiveComplaint(null);
+      if (!silent) toast.success("Aapki pichli complaint resolve ho gayi hai! Ab nayi complaint kar sakte hain.");
+      return;
+    }
+    setActiveComplaint(data as ActiveComplaint);
+  }, []);
+
+  useEffect(() => {
+    fetchActiveComplaint(true);
+    const t = setInterval(() => fetchActiveComplaint(true), 30000);
+    return () => clearInterval(t);
+  }, [fetchActiveComplaint]);
+
 
   // Location state
   const [location, setLocation] = useState("");
