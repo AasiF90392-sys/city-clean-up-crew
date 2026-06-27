@@ -308,12 +308,19 @@ const ComplaintPage = () => {
     setSuccessAiSolution(aiSuggestion);
     setSuccessDepartment(aiDepartment);
     setSuccessPriority(priorityLabels[aiPriority]);
-    
+
+    // Device-level lock: prevent re-submission until resolved
+    localStorage.setItem(LOCK_KEY, id);
+    localStorage.setItem(LOCK_AT_KEY, new Date().toISOString());
+    if (aiSuggestion) localStorage.setItem(LOCK_AI_KEY, aiSuggestion);
+
     setTrackingId(id);
     setShowSuccess(true);
     setName(""); setPhone(""); setDescription(""); setCategory(""); setIsUrgent(false);
     setAiSuggestion(""); setAiDepartment(""); setLocation(""); setPhotos([]);
+    fetchActiveComplaint(true);
   };
+
 
   return (
     <div className="min-h-screen">
