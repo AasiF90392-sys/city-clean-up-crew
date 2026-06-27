@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { ClipboardList, MapPin, Camera, Sparkles, AlertTriangle, Brain, Loader2, X, CheckCircle2, Clock, RefreshCw, Copy } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
